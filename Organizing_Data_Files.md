@@ -10,18 +10,18 @@ limit 20;
 ```
 Output:
 ```
-+----------+-----------------+
++------------+---------------+
 | ID         | Session number|
-+----------+-----------------+
-|  5	       |       1       |
-|  5	       |       2       | 
-|  3	       |       2       |
-|  6	       |       1       |
-|  4	       |       2       |
-|  5	       |       3       |
-|  6	       |       2       |
-|  5	       |       4       |
-+----------+----------------+
++------------+---------------+
+|  5	     |       1       |
+|  5	     |       2       | 
+|  3	     |       2       |
+|  6	     |       1       |
+|  4	     |       2       |
+|  5         |       3       |
+|  6	     |       2       |
+|  5	     |       4       |
++------------+---------------+
 ```
 
 ID 5, session 3 was incorrectly marked as session 4
@@ -109,4 +109,65 @@ select ID, `Session number` from complete_returns
 order by ID, `Session number`
 limit 10;
 ```
+
+Output:
+
+```
++--------------+-----------------+
+| ID           | Session number  |
++--------------+-----------------+
+|  1	       |       1         |
+|  1	       |       2         | 
+|  1	       |       3         |
+|  1	       |       4         |
+|  2	       |       1         |
+|  2           |       2         |
+|  2           |       3         |
+|  2           |       4         |
+|  5           |       1         |
+|  5           |       2         |
++--------------+-----------------+
+```
+
+Now, let's filter the other tables.
+
+```sql
+describe intake;
+
+describe tampon_data;
+```
+
+Make the ID column the correct data type
+
+```sql
+alter table tampon_data
+modify column `Participant ID` int;
+```
+
+Filter both tables so they only contain participants who 
+completed all four sessions (using the list of unique 
+ID numbers from our complete_returns table).
+
+```sql
+create table complete_tamp as
+select *
+from tampon_data
+where `Participant ID` in(1, 2, 5, 6, 15, 16, 17, 19, 20, 21, 25, 27, 30, 34, 35, 37, 39, 44, 47, 50, 51, 57, 58, 63, 64, 65, 70, 71, 72, 74, 76, 77, 82, 84, 85, 87, 88, 91, 92, 95, 96, 97, 98, 103);
+
+create table complete_intake as
+select *
+from intake
+where PID in(1, 2, 5, 6, 15, 16, 17, 19, 20, 21, 25, 27, 30, 34, 35, 37, 39, 44, 47, 50, 51, 57, 58, 63, 64, 65, 70, 71, 72, 74, 76, 77, 82, 84, 85, 87, 88, 91, 92, 95, 96, 97, 98, 103);
+```
+
+
+
+
+
+
+
+
+
+
+
 
