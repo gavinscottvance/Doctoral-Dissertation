@@ -160,6 +160,81 @@ from intake
 where PID in(1, 2, 5, 6, 15, 16, 17, 19, 20, 21, 25, 27, 30, 34, 35, 37, 39, 44, 47, 50, 51, 57, 58, 63, 64, 65, 70, 71, 72, 74, 76, 77, 82, 84, 85, 87, 88, 91, 92, 95, 96, 97, 98, 103);
 ```
 
+Now let's join the complete_tamp and complete_returns tables
+
+Hang on, we can't have duplicate column names when we do a join.
+Let's fix that first.
+
+```sql
+alter table complete_tamp
+rename column `Session Number` to session;
+```
+
+Okay, now we can join them
+
+```sql
+create table complete_returns_tamp as
+select *
+from complete_returns
+inner join complete_tamp
+on complete_returns.ID = complete_tamp.`Participant ID`
+and complete_returns.`Session number` = complete_tamp.session;
+```
+
+And let's put the ID and session number columns from each table next to each other
+in the new table, just so we can double-check our work.
+
+```sql
+alter table complete_returns_tamp
+modify `Participant ID` int
+after ID;
+
+alter table complete_returns_tamp
+modify session text
+after `Session number`;
+```
+Great! Everything looks good so far.
+Now we should add the relevant information from the
+fertility_bmi table, but first, we'll need to reorganize it.
+Currently, the fertility_bmi table has separate columns for 
+fertility status at each condition. We want to reorganize the data
+so that we just have two columns: fertility status (high, low, no)
+and condition (A, B, C, D).
+
+```sql
+create table fertility as
+select PID, 'A' as cond, A_Fert as fertility
+from fertility_bmi
+union
+select PID, 'B' as cond, B_Fert as fertility
+from fertility_bmi
+union
+select PID, 'C' as cond, C_Fert as fertility
+from fertility_bmi
+union
+select PID, 'D' as cond, D_Fert as fertility
+from fertility_bmi;
+```
+
+Now we should be able to do an inner join using the 
+experimental conditions (A, B, C, D) from both tables.
+
+```sql
+create table returns_tamp_fert as
+select *
+from complete_returns_tamp
+inner join fertility
+on complete_returns_tamp.ID = fertility.PID
+and complete_returns_tamp.`Audio Condition` = fertility.cond;
+```
+
+
+
+
+
+
+
+
 
 
 
