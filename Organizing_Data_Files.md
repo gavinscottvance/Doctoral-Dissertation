@@ -180,8 +180,54 @@ inner join complete_tamp
 on complete_returns.ID = complete_tamp.`Participant ID`
 and complete_returns.`Session number` = complete_tamp.session;
 ```
+Hang on, we're missing some data. The new, joined table 
+should be returning 172 rows (4 per each of our 43 participants),
+but we're only getting 164.
 
-And let's put the ID and session number columns from each table next to each other
+```sql
+describe complete_returns_tamp;
+```
+
+check for null values
+
+```sql
+select count(*) from complete_tamp
+where `Participant ID` is null or session is null;
+
+select count(*) from complete_returns
+where ID is null or `Session number` is null;
+```
+
+check for mismatched values
+
+```sql
+select distinct `Participant ID` from complete_tamp
+union
+select distinct ID from complete_returns;
+
+select distinct session from complete_tamp
+union 
+select distinct `Session number` from complete_returns;
+```
+
+check non-matching rows
+
+```sql
+select * from complete_returns
+where (ID, `Session number`) not in (select `Participant ID`, session from complete_tamp);
+
+select * from complete_tamp
+where (`Participant ID`, session) not in (select ID, `Session number` from complete_returns);
+```
+
+Okay, it looks like a few rows of data were skipped during the initial import 
+of the return session data because those participants had null values in a few places,
+and because those participants didn't have data for one of their return sessions,
+those participants were removed completely when we made our "complete_returns" table,
+and then did not show up after we joined the two tables. After filling the null cells
+with zeros and restarting the import, everything seems to be in order.
+
+Now, let's put the ID and session number columns from each table next to each other
 in the new table, just so we can double-check our work.
 
 ```sql
@@ -228,11 +274,29 @@ on complete_returns_tamp.ID = fertility.PID
 and complete_returns_tamp.`Audio Condition` = fertility.cond;
 ```
 
+Now lets add the BMI data to the intake data table
+
+```sql
+select * from complete_intake;
+
+select * from fertility_bmi;
+```
+
+Whoops- gotta rename a column before we can join the tables
 
 
+```sql
+alter table fertility_bmi
+rename column `ï»¿Participant ID` to PID1;
 
+create table intake_bmi as
+select *
+from complete_intake
+inner join fertility_bmi
+on complete_intake.PID = fertility_bmi.PID1;
 
-
+select * from intake_bmi;
+```
 
 
 
